@@ -4,11 +4,25 @@ import cors from "cors";
 import dotenv from "dotenv";
 import OpenAI from "openai";
 
+// --- नया कोड यहाँ जोड़ा गया है ---
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// --------------------------------
+
 dotenv.config();
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(".")); // serve index.html
+
+// --- इस सेक्शन को बदला गया है ---
+// यह सर्वर को बताएगा कि होमपेज पर index.html फ़ाइल दिखानी है
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+// --------------------------------
 
 // SECURITY: put your key in .env as OPENAI_API_KEY=sk-xxxx
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
