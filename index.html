@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Astro Numerology</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      font-family:'Poppins', sans-serif;
+      background:#0e0b23;
+      color:#f5f6ff;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:20px;
+      overflow:hidden;
+    }
+
+    /* 🌌 Animated stars background */
+    .stars{position:fixed;top:0;left:0;width:100%;height:100%;z-index:-1;overflow:hidden}
+    .star{
+      position:absolute;
+      background:white;
+      border-radius:50%;
+      opacity:0.8;
+      animation: twinkle 2s infinite ease-in-out alternate, drift 50s linear infinite;
+    }
+    @keyframes twinkle {
+      0%,100%{opacity:0.2;transform:scale(0.7);}
+      50%{opacity:1;transform:scale(1.6);}
+    }
+    @keyframes drift {
+      from{transform:translateY(0);}
+      to{transform:translateY(100vh);}
+    }
+    /* Shooting star */
+    .shooting-star{
+      position:absolute;
+      width:180px;
+      height:2px;
+      background:linear-gradient(90deg,white,transparent);
+      opacity:0.9;
+      transform:rotate(-45deg);
+      animation:shoot 1.5s linear forwards;
+    }
+    @keyframes shoot {
+      0%{transform:translateX(-200px) translateY(-200px) rotate(-45deg);opacity:1;}
+      100%{transform:translateX(100vw) translateY(100vh) rotate(-45deg);opacity:0;}
+    }
+
+    /* UI */
+    .container{display:grid;grid-template-columns:350px 1fr;gap:24px;max-width:1100px;width:100%;z-index:2;animation:fadeIn 2s ease;}
+    @media(max-width:900px){.container{grid-template-columns:1fr}}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+    .card{
+      background:rgba(255,255,255,0.06);
+      border:1px solid rgba(255,255,255,0.1);
+      border-radius:20px;
+      padding:20px;
+      backdrop-filter:blur(15px);
+      box-shadow:0 8px 25px rgba(0,0,0,0.5);
+      transition:0.4s;
+    }
+    .card:hover{transform:translateY(-6px) scale(1.02);box-shadow:0 15px 40px rgba(124,92,255,0.4);}
+    h2{font-weight:700;font-size:20px;margin-bottom:15px;display:flex;gap:10px;align-items:center}
+    label{font-size:13px;opacity:0.8;margin-top:10px;display:block}
+    input{
+      width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.15);
+      margin-top:5px;background:rgba(255,255,255,0.07);color:#fff;transition:0.3s
+    }
+    input:focus{outline:1px solid #7c5cff;box-shadow:0 0 12px #7c5cff88}
+    .btn{
+      width:100%;padding:12px;margin-top:16px;
+      background:linear-gradient(90deg,#7c5cff,#4fa4ff);
+      color:#fff;font-weight:600;border:none;border-radius:12px;
+      cursor:pointer;transition:0.4s;position:relative;overflow:hidden
+    }
+    .btn::after{content:"";position:absolute;top:0;left:-100%;width:100%;height:100%;background:rgba(255,255,255,0.25);transition:0.4s}
+    .btn:hover{transform:scale(1.05)}
+    .btn:hover::after{left:0}
+    .result{
+      max-height:75vh;overflow-y:auto;white-space:pre-wrap;line-height:1.6;
+      padding:15px;border-radius:15px;
+      background:rgba(255,255,255,0.07);
+      border:1px solid rgba(255,255,255,0.1);
+      animation:fadeIn 1.5s ease
+    }
+    .chips{margin:8px 0;display:flex;gap:8px;flex-wrap:wrap}
+    .chip{padding:5px 10px;border-radius:999px;font-size:12px;background:#251f62;color:#dadaff;border:1px solid rgba(255,255,255,0.1)}
+  </style>
+</head>
+<body>
+  <!-- ⭐ Background Stars -->
+  <div class="stars" id="stars"></div>
+
+  <div class="container">
+    <!-- Left -->
+    <div class="card">
+      <h2>🔮 Personal Numerology Reading</h2>
+      <label>Name</label><input id="name">
+      <label>DOB</label><input id="dob" type="date">
+      <label>Time (optional)</label><input id="tob" type="time">
+      <label>Place</label><input id="place">
+      <button class="btn" id="go">Generate Reading</button>
+    </div>
+
+    <!-- Right -->
+    <div class="card">
+      <h2>📖 Your Result</h2>
+      <div id="meta" style="font-size:13px;opacity:0.8"></div>
+      <div class="chips">
+        <div class="chip" id="chip-driver">Driver:-</div>
+        <div class="chip" id="chip-conductor">Conductor:-</div>
+        <div class="chip" id="chip-name">Name:-</div>
+      </div>
+      <div class="result" id="result">➡ Enter details and generate.</div>
+    </div>
+  </div>
+
+<script>
+  // 🌟 Star field
+  const starContainer=document.getElementById("stars");
+  for(let i=0;i<130;i++){
+    const s=document.createElement("div");
+    s.className="star";
+    const size=Math.random()*3+2;
+    s.style.width=size+"px"; s.style.height=size+"px";
+    s.style.top=Math.random()*100+"%";
+    s.style.left=Math.random()*100+"%";
+    s.style.animationDuration=(2+Math.random()*3)+"s, "+(40+Math.random()*30)+"s";
+    starContainer.appendChild(s);
+  }
+  // 🌠 Shooting stars
+  function createShootingStar(){
+    const sh=document.createElement("div");
+    sh.className="shooting-star";
+    sh.style.top=Math.random()*35+"%";
+    sh.style.left="0px";
+    starContainer.appendChild(sh);
+    setTimeout(()=>sh.remove(),1500);
+  }
+  setInterval(createShootingStar,5000);
+
+  // Numerology
+  const $=id=>document.getElementById(id);
+  function ddmmyyyy(date){const d=new Date(date);if(isNaN(+d))return"";return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}/${d.getFullYear()}`;}
+  function reduceDigit(x){let n=x;while(n>=10){let s=0;while(n>0){s+=n%10;n=Math.floor(n/10);}n=s;}return n;}
+  function driverFromDD(dd){let d=parseInt(dd[0],10)+parseInt(dd[1],10);return d>=10?reduceDigit(d):d;}
+  function conductorFromDate(ddmmyyyy){let t=0;for(const ch of ddmmyyyy){if(ch==="/")continue;t+=parseInt(ch,10);}return reduceDigit(t);}
+  function nameNumber(fullName){const map={a:1,i:1,j:1,q:1,y:1,b:2,k:2,r:2,c:3,g:3,l:3,s:3,d:4,m:4,t:4,e:5,h:5,n:5,u:6,v:6,w:6,x:6,o:7,z:7,f:8,p:8};let tot=0;for(const ch of fullName.toLowerCase()){tot+=map[ch]||0;}return driverFromDD(String(tot).padStart(2,"0"));}
+
+  $("go").onclick=async ()=>{
+    const name=$("name").value,dob=$("dob").value;if(!name||!dob){alert("Enter name & DOB");return;}
+    const fmt=ddmmyyyy(dob),d=driverFromDD(fmt),c=conductorFromDate(fmt),nn=nameNumber(name);
+    $("meta").textContent=`${name} • ${fmt}`;
+    $("chip-driver").textContent=`Driver:${d}`; $("chip-conductor").textContent=`Conductor:${c}`; $("chip-name").textContent=`Name:${nn}`;
+    $("result").textContent="⏳ Generating reading...";
+    const res=await fetch("/api/reading",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,dob:fmt,time:$("tob").value,place:$("place").value,driver:d,conductor:c,nameNumber:nn})});
+    const data=await res.json(); $("result").textContent=data.overview+"\n\n"+data.detailed;
+  }
+</script>
+</body>
+</html>
